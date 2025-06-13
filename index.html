@@ -127,7 +127,6 @@
       font-size: 1.16em;
       letter-spacing: 1px;
     }
-    /* Modal styles */
     .modal {
       display: none;
       position: fixed;
@@ -156,14 +155,18 @@
       to   { opacity: 0; background: rgba(23,30,44,0.6);}
     }
     .modal-img {
-      max-width: 98vw;
-      max-height: 95vh;
+      max-width: 99vw;
+      max-height: 99vh;
+      min-width: 80vw;
+      min-height: 80vh;
       border-radius: 22px;
       box-shadow: 0 0 46px 15px #0f1422cc;
       background: #fff;
-      border: 5px solid #fff;
+      border: 7px solid #fff;
       animation: modalZoomIn 0.32s;
       object-fit: contain;
+      display: block;
+      margin: auto;
     }
     .modal-img.out {
       animation: modalZoomOut 0.22s;
@@ -189,6 +192,14 @@
       .modal-img {
         border-radius: 11px;
         border-width: 3px;
+        min-width: 90vw;
+        min-height: 50vw;
+      }
+    }
+    @media (max-width: 450px) {
+      .modal-img {
+        min-width: 96vw;
+        min-height: 40vw;
       }
     }
   </style>
@@ -251,7 +262,6 @@
 
         const fechaSpan = document.createElement('span');
         fechaSpan.className = 'photo-date';
-        // Solo muestra la fecha actual
         fechaSpan.textContent = new Date().toLocaleDateString();
 
         footer.appendChild(idxSpan);
@@ -286,7 +296,7 @@
         modalImg.classList.remove('out');
         modalImg.src = '';
         modalOpen = false;
-      }, 210); // Tiempo igual a la animación de cierre
+      }, 210); 
     }
 
     modal.addEventListener('click', cerrarModalAnimado);
