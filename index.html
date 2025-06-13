@@ -179,6 +179,101 @@
       from { transform: scale(1); opacity: 1; }
       to   { transform: scale(0.72); opacity: 0.2; }
     }
+    /* ---- Estilos ventana clave ---- */
+    .clave-overlay {
+      position: fixed;
+      z-index: 10000;
+      left: 0; top: 0;
+      width: 100vw; height: 100vh;
+      background: rgba(23,30,44,0.96);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.25s;
+      will-change: transform;
+    }
+    .clave-modal {
+      background: #232c3d;
+      border-radius: 16px;
+      padding: 38px 30px 30px 30px;
+      box-shadow: 0 8px 48px 0 rgba(28,44,80,0.23), 0 2px 4px 0 rgba(30,30,80,0.18);
+      border: 2px solid #2c3e59;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-width: 330px;
+      animation: claveAnimIn 0.4s;
+      will-change: transform;
+    }
+    @keyframes claveAnimIn {
+      from { transform: scale(0.87); opacity: 0.3;}
+      to   { transform: scale(1); opacity: 1;}
+    }
+    .clave-modal h3 {
+      color: #23a6d5;
+      margin-bottom: 16px;
+      font-size: 1.3em;
+      letter-spacing: 1px;
+    }
+    .clave-modal label {
+      color: #eaf6fb;
+      margin-bottom: 8px;
+      font-size: 1.05em;
+    }
+    .clave-input {
+      padding: 10px 16px;
+      border-radius: 7px;
+      border: 1.5px solid #23a6d5;
+      background: #1c2332;
+      color: #fff;
+      font-size: 1.1em;
+      outline: none;
+      width: 180px;
+      margin-bottom: 8px;
+      text-align: center;
+      letter-spacing: 5px;
+      font-weight: 600;
+      transition: border-color 0.18s;
+    }
+    .clave-input:focus {
+      border-color: #39c3ed;
+    }
+    .clave-btn {
+      margin-top: 13px;
+      padding: 10px 25px;
+      background: linear-gradient(90deg,#23a6d5,#2772a1);
+      color: #fff;
+      border: none;
+      border-radius: 7px;
+      cursor: pointer;
+      font-size: 1.05em;
+      font-weight: 500;
+      box-shadow: 0 2px 8px #23a6d522;
+      transition: background 0.18s, transform 0.12s;
+    }
+    .clave-btn:hover {
+      background: linear-gradient(90deg,#2772a1,#23a6d5);
+      transform: scale(1.04);
+    }
+    .clave-msg {
+      color: #ff8080;
+      margin-top: 8px;
+      min-height: 1.5em;
+      font-size: 1em;
+      text-align: center;
+      font-weight: 500;
+      letter-spacing: 0.5px;
+      transition: color 0.2s;
+    }
+    /* Animación de desbloqueo */
+    .clave-overlay.unlock {
+      animation: unlockUp 0.7s cubic-bezier(.4,1.3,.6,1) forwards;
+      will-change: transform;
+    }
+    @keyframes unlockUp {
+      from { transform: translateY(0);}
+      to   { transform: translateY(-110vh);}
+    }
     @media (max-width: 700px) {
       .gallery-container {
         padding: 4px 1vw 14px 1vw;
@@ -195,6 +290,7 @@
         min-width: 90vw;
         min-height: 50vw;
       }
+      .clave-modal { min-width: 90vw;}
     }
     @media (max-width: 450px) {
       .modal-img {
@@ -205,8 +301,18 @@
   </style>
 </head>
 <body>
+  <!-- Pantalla de clave -->
+  <div class="clave-overlay" id="claveOverlay">
+    <form class="clave-modal" id="claveForm" autocomplete="off" onsubmit="return false;">
+      <h3>Acceso a Galería</h3>
+      <label for="claveInput">Ingrese la clave numérica:</label>
+      <input type="password" id="claveInput" class="clave-input" maxlength="4" inputmode="numeric" pattern="[0-9]*" autofocus required autocomplete="off" />
+      <button class="clave-btn" type="submit">Acceder</button>
+      <div class="clave-msg" id="claveMsg"></div>
+    </form>
+  </div>
   <h2>Galería de Fotos Almacenadas</h2>
-  <div class="gallery-container">
+  <div class="gallery-container" id="galleryContainer" style="filter: blur(25px); pointer-events: none; user-select: none;">
     <div class="gallery-header">
       <h3 id="galleryCount">Tus fotos (0)</h3>
       <button class="clear-btn" id="clearAll">Borrar todas las fotos</button>
@@ -221,6 +327,89 @@
   </div>
 
   <script>
+    // --------- BLOQUEO POR CLAVE -----------
+    const CLAVE = '1706';
+    let intentos = 0;
+    const MAX_INTENTOS = 5;
+    const claveOverlay = document.getElementById('claveOverlay');
+    const claveForm = document.getElementById('claveForm');
+    const claveInput = document.getElementById('claveInput');
+    const claveMsg = document.getElementById('claveMsg');
+    const galleryContainer = document.getElementById('galleryContainer');
+    let desbloqueando = false;
+
+    function bloquearGaleria() {
+      claveOverlay.style.display = 'flex';
+      claveOverlay.classList.remove('unlock');
+      galleryContainer.style.filter = 'blur(25px)';
+      galleryContainer.style.pointerEvents = 'none';
+      galleryContainer.style.userSelect = 'none';
+      intentos = 0;
+      claveMsg.textContent = '';
+      claveInput.value = '';
+      claveInput.focus();
+      desbloqueando = false;
+    }
+    function desbloquearGaleria() {
+      if (desbloqueando) return;
+      desbloqueando = true;
+      claveOverlay.classList.add('unlock');
+      galleryContainer.style.filter = 'none';
+      galleryContainer.style.pointerEvents = 'auto';
+      galleryContainer.style.userSelect = 'auto';
+      // Después de la animación, oculta el overlay y limpia
+      setTimeout(() => {
+        claveOverlay.style.display = 'none';
+        claveOverlay.classList.remove('unlock');
+        claveInput.value = '';
+        claveMsg.textContent = '';
+        desbloqueando = false;
+      }, 700);
+    }
+    function expulsarUsuario() {
+      claveMsg.textContent = 'Demasiados intentos fallidos. ¡Acceso denegado!';
+      setTimeout(() => {
+        window.location.href = 'https://www.google.com/';
+      }, 1400);
+    }
+    claveForm.addEventListener('submit', () => {
+      if (desbloqueando) return;
+      const valor = claveInput.value.trim();
+      if (valor === CLAVE) {
+        desbloquearGaleria();
+      } else {
+        intentos++;
+        claveInput.value = '';
+        claveInput.focus();
+        if (intentos >= MAX_INTENTOS) {
+          expulsarUsuario();
+        } else {
+          claveMsg.textContent = `Clave incorrecta. Te quedan ${MAX_INTENTOS - intentos} intento(s).`;
+        }
+      }
+    });
+    // Permitir solo números
+    claveInput.addEventListener('input', () => {
+      claveInput.value = claveInput.value.replace(/[^0-9]/g, '');
+    });
+    // No permitir salir con Esc ni clic fuera
+    window.addEventListener('keydown', (e) => {
+      if (claveOverlay.style.display !== 'none') {
+        if (e.key === 'Escape') e.preventDefault();
+      }
+    });
+    claveOverlay.addEventListener('click', (e) => {
+      if (e.target === claveOverlay) {
+        claveInput.focus();
+      }
+    });
+    // Siempre pedir clave al recargar
+    window.addEventListener('DOMContentLoaded', () => {
+      bloquearGaleria();
+      claveInput.focus();
+    });
+
+    // ----------- GALERIA Y MODAL -----------
     function getFotos() {
       const fotos = localStorage.getItem('fotosUsuario');
       return fotos ? JSON.parse(fotos) : [];
@@ -296,12 +485,12 @@
         modalImg.classList.remove('out');
         modalImg.src = '';
         modalOpen = false;
-      }, 210); 
+      }, 210);
     }
 
     modal.addEventListener('click', cerrarModalAnimado);
     window.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape' && modalOpen) cerrarModalAnimado();
+      if (e.key === 'Escape' && modalOpen && claveOverlay.style.display === 'none') cerrarModalAnimado();
     });
 
     document.getElementById('clearAll').addEventListener('click', () => {
